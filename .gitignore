@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.DS_Store
+data/cache.db
+data/cache.db-journal
+data/openings/book_cache.json
+
+# chess.com piece sets: downloaded for personal use by scripts/fetch_pieces.py
+static/img/pieces/neo/
+static/img/pieces/neo_wood/

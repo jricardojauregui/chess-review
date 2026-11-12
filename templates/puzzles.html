@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Puzzles · Chess Review{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Puzzles from my mistakes</h1>
+    <div class="sub" id="puzzle-who"></div>
+  </div>
+</div>
+<div id="puzzle-error" class="error-box" hidden></div>
+
+<div id="puzzle-empty" class="empty" hidden></div>
+
+<section id="puzzle-stage" class="puzzle-grid" hidden>
+  <div class="puzzle-board">
+    <div class="board-box"><div id="board"></div><div class="move-badge" id="move-badge" hidden></div></div>
+  </div>
+  <aside class="side-col">
+    <div class="card coach-card">
+      <div class="coach-row">
+        <div class="coach-avatar" id="coach-avatar"></div>
+        <div class="bubble" id="bubble" aria-live="polite">
+          <div class="bubble-head"><span id="bubble-icon"></span><span class="title" id="bubble-title"></span></div>
+          <div class="bubble-text" id="bubble-text"></div>
+          <div class="bubble-line" id="bubble-line"></div>
+        </div>
+      </div>
+      <div class="coach-actions">
+        <button class="btn" id="btn-prev">Previous</button>
+        <button class="btn" id="btn-solution">Show solution</button>
+        <button class="btn btn-primary" id="btn-next">Next</button>
+      </div>
+      <div class="puzzle-info" id="puzzle-info"></div>
+      <div class="puzzle-progress" id="puzzle-progress"></div>
+    </div>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/puzzles.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Settings · Chess Review{% endblock %}
+{% block content %}
+<div class="settings">
+  <div class="page-head" style="margin-bottom:0"><h1>Settings</h1></div>
+
+  <section class="card" id="account">
+    <h2>chess.com account</h2>
+    <div class="hint">Games, stats and puzzles use this account.</div>
+    <div id="account-panel"></div>
+  </section>
+
+  <section class="card" id="engine">
+    <h2>Analysis level</h2>
+    <div class="hint">The default used when you press <b>Analyze game</b>. You can still pick another level for a single game or a batch.</div>
+    <div class="presets" id="preset-choice"></div>
+    <div class="level-note" id="preset-note"></div>
+  </section>
+
+  <section class="card" id="effort">
+    <h2>Effort</h2>
+    <div class="hint">How much of the CPU an analysis may use. More effort means <b>faster</b>, not different, results: the
+      positions of a game are shared out between several engines. You can also change it right before analysing a game.</div>
+    <div class="presets" id="effort-choice"></div>
+    <div class="level-note" id="effort-note"></div>
+  </section>
+
+  <section class="card" id="board-section">
+    <h2>Board &amp; pieces</h2>
+    <div class="hint">The preview shows your choice; it applies everywhere at once.</div>
+    <div class="board-settings">
+      <div>
+        <div class="board-preview"><div id="preview-board"></div></div>
+        <div class="preview-caption" id="preview-caption"></div>
+      </div>
+      <div>
+        <div class="section-title">Board</div>
+        <div class="scroll-box" id="board-choice"></div>
+        <div class="section-title">Pieces</div>
+        <div class="scroll-box"><div class="swatches" id="pieces-choice"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="appearance">
+    <h2>Appearance &amp; sound</h2>
+    <div class="hint">Sound is a wooden click when a piece moves and a sharper one for captures.</div>
+    <div class="switch-row">
+      <span class="field">Theme
+        <span class="segmented" id="theme-choice" role="group" aria-label="Theme">
+          <button type="button" data-set="theme" data-value="light">Light</button>
+          <button type="button" data-set="theme" data-value="dark">Dark</button>
+        </span>
+      </span>
+      <span class="field">Move sounds
+        <span class="segmented" id="sound-choice" role="group" aria-label="Move sounds">
+          <button type="button" data-set="sound" data-value="on">On</button>
+          <button type="button" data-set="sound" data-value="off">Off</button>
+        </span>
+        <button class="btn btn-small" id="sound-test" type="button">Test</button>
+      </span>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" data-theme="{{ settings.theme }}" data-board="{{ settings.board }}"
+      data-pieces="{{ settings.pieces }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Chess Review{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/chessground.base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pieces.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/coach.css') }}">
+</head>
+<body>
+  {% set account = settings.account %}
+  <!-- Main menu: always a horizontal bar on top -->
+  <header class="topbar" id="topbar">
+    <a class="brand" href="/" title="Chess Review">
+      <img src="{{ url_for('static', filename='img/favicon.svg') }}" alt="">
+      <span class="label">Chess Review</span>
+    </a>
+    <nav class="menu" aria-label="Main">
+      <a href="/" class="{{ 'active' if request.path == '/' or request.path.startswith('/review') }}" title="Games">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 12h17M12 3.5v17"/><path d="M3.5 3.5H12V12H3.5zM12 12h8.5v8.5H12z" fill="currentColor" opacity=".28" stroke="none"/></svg>
+        <span class="label">Games</span>
+      </a>
+      <a href="/stats" class="{{ 'active' if request.path == '/stats' }}" title="Stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V11M10 20V4M16 20v-7M21 20H3"/></svg>
+        <span class="label">Stats</span>
+      </a>
+      <a href="/puzzles" class="{{ 'active' if request.path == '/puzzles' }}" title="Puzzles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>
+        <span class="label">Puzzles</span>
+      </a>
+      <a href="/settings" class="{{ 'active' if request.path == '/settings' }}" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 000-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 00-2.6-1.5L14 2.5h-4l-.4 2.5A7.6 7.6 0 007 6.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 000 3l-2 1.5 2 3.5 2.4-1a7.6 7.6 0 002.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 002.6-1.5l2.4 1 2-3.5z"/></svg>
+        <span class="label">Settings</span>
+      </a>
+    </nav>
+    <div class="menu-right">
+      <a class="chip {{ '' if account else 'unlinked' }}" id="account-chip" href="/settings#account" title="{{ 'Account: ' ~ account.username if account else 'Link your chess.com account' }}">
+        {% if account %}
+          {% if account.avatar %}<img class="avatar" src="{{ account.avatar }}" alt="" referrerpolicy="no-referrer">
+          {% else %}<span class="avatar avatar-initial">{{ account.username[0]|upper }}</span>{% endif %}
+          <span class="label">{{ account.username }}</span>
+        {% else %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.500s6.300 1.900 7.500 5.500"/></svg>
+          <span class="label">Link account</span>
+        {% endif %}
+      </a>
+      <button class="icon-btn" id="theme-toggle" title="Switch between light and dark" aria-label="Switch between light and dark">
+        <svg class="only-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.500M2.500 12H5M19 12h2.500M5.300 5.300l1.800 1.800M16.900 16.900l1.800 1.800M5.300 18.700l1.800-1.800M16.900 7.100l1.800-1.800"/></svg>
+        <svg class="only-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20 14.500A8 8 0 019.500 4a8 8 0 1010.500 10.500z"/></svg>
+      </button>
+    </div>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+
+  <script>
+    window.APP = {
+      settings: {{ settings|tojson }},
+      presets: {{ config.ENGINE_PRESETS|tojson }},
+      efforts: {{ config.effort_levels()|tojson }},
+      pieceSets: {{ piece_sets|tojson }},
+      depthDefault: {{ config.DEPTH_DEFAULT }},
+      depthFast: {{ config.DEPTH_FAST }},
+      statsGames: {{ config.STATS_DEFAULT_GAMES }},
+      thresholds: { excellent: {{ config.EXCELLENT_MAX }}, good: {{ config.GOOD_MAX }},
+                    inaccuracy: {{ config.INACCURACY_MAX }}, mistake: {{ config.MISTAKE_MAX }} }
+    };
+  </script>
+  <script type="module" src="{{ url_for('static', filename='js/shell.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Chess Review{% endblock %}
+{% block content %}
+<div id="engine-warning" class="warn-box" hidden>
+  Stockfish was not found, so games cannot be analysed yet. Install it or set
+  <code>STOCKFISH_PATH</code> in a <code>.env</code> file (see the README), then restart the app.
+</div>
+
+{% if not settings.account %}
+<!-- First run / no account linked: ask which account to analyse -->
+<section class="card onboard" id="onboard">
+  <div id="home-coach"></div>
+  <h1>Which account do you want to analyze?</h1>
+  <div class="muted">Link your chess.com account and I'll bring in your games. You can change or unlink it any time in Settings.</div>
+  <form id="onboard-form">
+    <input type="text" id="onboard-input" placeholder="chess.com username" autocomplete="off" spellcheck="false" aria-label="chess.com username" autofocus>
+    <button class="btn btn-primary" type="submit">Link account</button>
+  </form>
+  <div id="onboard-error" class="error-box" hidden></div>
+</section>
+{% else %}
+<div class="home-head">
+  {% if settings.account.avatar %}<img class="avatar" src="{{ settings.account.avatar }}" alt="" referrerpolicy="no-referrer">
+  {% else %}<span class="avatar avatar-initial">{{ settings.account.username[0]|upper }}</span>{% endif %}
+  <div>
+    <h1>{{ settings.account.username }}</h1>
+    <div class="muted">Pick a game to open it on the board. Hover an opponent's name to see how it ended.</div>
+  </div>
+</div>
+
+<section class="card" id="games-card">
+  <div class="games-head">
+    <h2>Recent games</h2>
+    <span class="spacer"></span>
+    <div class="slicers">
+      <select id="year" aria-label="Year"></select>
+      <select id="month" aria-label="Month"></select>
+    </div>
+  </div>
+  <div id="games-error" class="error-box" hidden></div>
+  <div id="games-body"><div class="empty">Loading games<span class="dots"></span></div></div>
+</section>
+{% endif %}
+
+<div class="home-tools">
+  <section class="card">
+    <h3>Open a specific game</h3>
+    <div class="muted">Paste a chess.com game link or just its ID (the number at the end of the link).</div>
+    <form class="row" id="lookup-form">
+      <input type="text" id="lookup-input" placeholder="https://www.chess.com/game/live/123456789" autocomplete="off" spellcheck="false" aria-label="chess.com game ID or link">
+      <button class="btn btn-primary" type="submit" id="lookup-go">Open</button>
+    </form>
+    <div id="lookup-error" class="error-box" hidden></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}
