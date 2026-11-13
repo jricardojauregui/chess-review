@@ -1,9 +1,23 @@
 // Runs on every page: theme toggle and the account-linking helper shared by
 // the home and settings pages.
-import { $, api, efforts, el, escapeHtml, presetByDepth, saveSettings, settings, store } from './common.js';
+import './i18n.js';
+import { $, api, efforts, el, escapeHtml, playSound, presetByDepth, saveSettings, settings, store } from './common.js';
 
 $('#theme-toggle').addEventListener('click', () =>
   saveSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' }));
+
+// Quick mute: the same setting as "Move sounds" in Settings
+$('#sound-toggle').addEventListener('click', () => {
+  saveSettings({ sound: !settings.sound });
+  if (settings.sound) playSound('move');            // so you hear that it is back on
+});
+
+// Language: saved with the other settings; the page reloads so the server's
+// coach texts come back in the new language too.
+$('#lang-toggle').addEventListener('click', async () => {
+  await saveSettings({ lang: settings.lang === 'es' ? 'en' : 'es' });
+  location.reload();
+});
 
 /** Link a chess.com account, then reload so every page picks it up. */
 export async function linkAccount(username, errorBox) {

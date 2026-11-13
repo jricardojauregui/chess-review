@@ -190,6 +190,7 @@ DEFAULT_SETTINGS = {
     "sound": True,
     "engine": None,         # default analysis level (id from config.ENGINE_PRESETS)
     "effort": None,         # CPU effort (id from config.EFFORT_LEVELS)
+    "lang": "en",           # interface and coach language: en | es
 }
 
 

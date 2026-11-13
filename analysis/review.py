@@ -79,7 +79,7 @@ def _phase_quality(accuracy):
     return config.PHASE_QUALITY[-1][1]
 
 
-def _summary(results, accuracy, result, hero):
+def _summary(results, accuracy, result, hero, lang="en"):
     counts = {c: {label: 0 for label in classify.ALL_LABELS} for c in "wb"}
     for r in results:
         counts[r["color"]][r["cls"]] += 1
@@ -100,12 +100,12 @@ def _summary(results, accuracy, result, hero):
         "accuracy": accuracy,
         "counts": counts,
         "phases": phases,
-        "comment": coach.summary_comment(results, counts, accuracy, result, hero),
+        "comment": coach.summary_comment(results, counts, accuracy, result, hero, lang),
     }
 
 
-def build_review(game_row, positions, depth, hero=None):
-    """Full review payload for one game."""
+def build_review(game_row, positions, depth, hero=None, lang="en"):
+    """Full review payload for one game (coach texts in ``lang``: "en" | "es")."""
     game, board, moves, clocks = parse_pgn(game_row["pgn"])
     if len(positions) != len(moves) + 1:
         raise PgnError("Cached analysis does not match this game.")
@@ -114,7 +114,7 @@ def build_review(game_row, positions, depth, hero=None):
 
     book_plies, names, opening = openings.detect(board, moves)
     results = classify.classify_game(board, moves, positions, book_plies, names)
-    coach.annotate(results, game_row["id"], hero)
+    coach.annotate(results, game_row["id"], hero, lang)
     for r, clock in zip(results, clocks):
         r["clock"] = clock
 
@@ -137,13 +137,13 @@ def build_review(game_row, positions, depth, hero=None):
         "hero": hero,
         "start": {"fen": board.fen(), "win_white": round(start_win, 2), "eval": start_eval},
         "moves": results,
-        "summary": _summary(results, accuracy, meta.get("result"), hero),
-        "coach_lines": coach.INTERACTIVE,
+        "summary": _summary(results, accuracy, meta.get("result"), hero, lang),
+        "coach_lines": coach.interactive(lang),
         "labels": classify.ALL_LABELS,
     }
 
 
-def build_preview(game_row, hero=None):
+def build_preview(game_row, hero=None, lang="en"):
     """The game without engine analysis: enough to show and replay the board."""
     game, board, moves, clocks = parse_pgn(game_row["pgn"])
     meta = dict(game_row["meta"])
@@ -167,7 +167,7 @@ def build_preview(game_row, hero=None):
         "start": {"fen": board.fen(), "win_white": 50.0,
                   "eval": {"cp": 0, "mate": None, "text": "0.00"}},
         "moves": plain,
-        "coach_lines": coach.INTERACTIVE,
+        "coach_lines": coach.interactive(lang),
         "labels": classify.ALL_LABELS,
     }
 

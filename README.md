@@ -78,13 +78,41 @@ o en `.env`; no se usa el 5000 porque en macOS lo ocupa AirPlay.)
    a la partida, el motor evalúa tu jugada en vivo, la clasifica, mueve la barra
    y muestra sus **3 mejores líneas** (clic en una para jugarla). *Undo move*
    retrocede y *Back to game* (o `Esc`) vuelve a la partida.
-7. **Stats** y **Puzzles**: usan la cuenta vinculada. En Stats eliges el nivel
-   y el effort y analizas en lote las partidas que falten a ese nivel; cada
-   Blunder y Miss tuyo se convierte en un puzzle. El lote corre en el servidor:
+   En las jugadas Brilliant, Great, Miss, Inaccuracy, Mistake y Blunder aparece
+   **Explain why** (tecla `W`): el coach explica en dos o tres frases el motivo
+   concreto (qué respuesta castiga la jugada, qué material se pierde, qué mate
+   había, cuánto bajan tus probabilidades de ganar) y muestra las dos líneas.
+7. **Openings**: 36 lecciones escritas a mano, más todas las aperturas con nombre
+   de la base de datos. Cada lección va por pasos: primero la **lección guiada**
+   de la línea principal (el coach marca tu jugada con la pieza en azul y una
+   flecha, tú la juegas en el tablero y él explica para qué sirve; las respuestas
+   del rival se juegan solas), después **Practice from memory** (sin flechas;
+   *Hint* marca primero la pieza en azul y, si lo pides otra vez, la flecha) y,
+   al terminar la línea principal, se desbloquean las **líneas extra**.
+8. **Puzzles**: entrenamiento con un banco de ~9,300 puzzles de varias jugadas
+   (`data/puzzles.tsv`). No salen de tus partidas: tus partidas revisadas solo
+   deciden la mezcla (si fallas mates, más mates; si cuelgas piezas, más piezas
+   sueltas) y la tarjeta *What I'm training you on* lo explica. Tú juegas cada
+   jugada de la línea y el rival responde solo. *Hint* marca la pieza en azul y
+   luego la flecha; *Show solution* reproduce la línea. Tu **puzzle rating**
+   sube o baja con cada resultado y decide la dificultad de los siguientes. La
+   pestaña *From my games* conserva los puzzles de tus propios Blunders y Misses.
+9. **Stats**: usa la cuenta vinculada. Eliges el nivel
+   y el effort y analizas en lote las partidas que falten a ese nivel.
+   El lote corre en el servidor:
    puedes cambiar de página y una tarjeta abajo a la derecha muestra el progreso
    en toda la app. Mientras corre no se puede lanzar otro. **Stop** lo detiene
    y pregunta si conservar o revertir las partidas que ya había terminado.
-8. **Settings** (página propia): cuenta, nivel de análisis y **effort** por
+10. **Idioma**: el botón `EN` / `ES` junto al de tema claro/oscuro cambia toda la
+   app entre inglés y español. La interfaz se traduce con el diccionario de
+   `static/js/i18n-es.js` y los mensajes del coach vienen del banco en español
+   (`analysis/coach_es.py`, con los nombres de clasificación de chess.com:
+   Brillante, Genial, Mejor, Excelente, Buena, Libro, Imprecisión, Error,
+   Omisión, Error grave). Las 36 lecciones de aperturas están traducidas en
+   `analysis/lessons_es.py`; los nombres de la base de aperturas y la notación
+   de las jugadas (Nf3, Bc4) siguen en inglés. Al lado hay un botón para
+   activar o silenciar el sonido de las jugadas.
+11. **Settings** (página propia): cuenta, nivel de análisis y **effort** por
    defecto, tablero y piezas (20 tableros lisos, de madera y de piedra; 20 juegos
    de piezas, con vista previa siempre visible), tema claro/oscuro y sonido.
 
@@ -191,16 +219,21 @@ analysis/
   engine.py            Stockfish (MultiPV=2), eval → win%
   classify.py          Clasificación, SEE/sacrificios, etiquetas, precisión
   coach.py             Banco de mensajes del coach (clasificación × contexto)
+  coach_es.py          El mismo banco en español
   openings.py          Libro de aperturas (TSV de lichess-org/chess-openings)
   chesscom.py          Cliente de la API pública de chess.com
   review.py            PGN + análisis → JSON de la review y el resumen
   jobs.py              Análisis en segundo plano con progreso (SSE)
   explore.py           Análisis en vivo de una posición (modo "¿y si…?")
-  stats.py             Estadísticas y puzzles
+  stats.py             Estadísticas y puzzles de tus propios errores
+  puzzles.py           Banco de puzzles de entrenamiento y perfil de debilidades
+  lessons.py           Lecciones de aperturas (lessons_data.py + lessons_extra.py,
+                       y su texto en español en lessons_es.py)
   store.py             SQLite: partidas, caché de análisis, perfiles, ajustes
 templates/, static/    HTML, JS vanilla, CSS, librerías en static/vendor
 tests/                 pytest
 data/openings/         TSV de aperturas · data/cache.db se crea solo
+data/puzzles.tsv       Banco de puzzles (lo regenera scripts/build_puzzles.py)
 ```
 
 ## API
@@ -217,11 +250,16 @@ data/openings/         TSV de aperturas · data/cache.db se crea solo
 | `GET /api/analyze/stream?game_id=&depth=` | SSE con el progreso del análisis |
 | `GET /api/review/<game_id>?depth=` | Review clasificada (202 + la partida sin analizar si falta) |
 | `GET /api/stats/<username>?n=` · `GET /api/puzzles/<username>?n=` | Extras |
+| `POST /api/puzzles/train` `{rating, n, seen}` | Sesión de puzzles del banco, mezclada según tus errores |
+| `GET /api/openings` · `GET /api/openings/lesson/<id>` · `GET /api/openings/search?q=` | Lecciones de aperturas |
 
 ## Créditos
 
 - Tablero: [chessground](https://github.com/lichess-org/chessground) · lógica: [chess.js](https://github.com/jhlywa/chess.js) · gráficas: [Chart.js](https://www.chartjs.org/)
 - Aperturas: [lichess-org/chess-openings](https://github.com/lichess-org/chess-openings)
+- Puzzles: selección de la [base de puzzles de Lichess](https://database.lichess.org/#puzzles)
+  (dominio público, CC0). `python scripts/build_puzzles.py` la vuelve a generar
+  (descarga el inicio de la base; necesita el comando `zstd`).
 - Los juegos de piezas incluidos y los sonidos de movimiento: del proyecto
   open source [Lichess (lila)](https://github.com/lichess-org/lila). Lo único
   de chess.com son las piezas Neo y Neo Wood, opcionales y fuera del repositorio

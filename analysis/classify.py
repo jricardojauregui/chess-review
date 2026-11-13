@@ -112,6 +112,22 @@ def _track(board, pv_uci, color):
     return track
 
 
+def san_line(board, pv_uci):
+    """A PV (UCI moves from ``board``) in SAN; stops at the first move that does not fit."""
+    walker = board.copy(stack=False)
+    sans = []
+    for uci in pv_uci:
+        try:
+            move = chess.Move.from_uci(uci)
+        except ValueError:
+            break
+        if move not in walker.legal_moves:
+            break
+        sans.append(walker.san(move))
+        walker.push(move)
+    return sans
+
+
 def _offered_material(after, mover):
     """Points the opponent can really win by taking one of ``mover``'s pieces.
 
@@ -221,6 +237,16 @@ def material_gain(board_after, pv_after, mover, baseline):
     if not settled:
         return 0
     return settled[-1] - baseline
+
+
+def _material_drop(board_after, pv_after, mover, baseline):
+    """Points ``mover`` is down on ``baseline`` once the opponent's best line is played.
+
+    Takes the better of the last two positions of the line, so a trade that is
+    still in the air at the end of the line is not counted as a loss.
+    """
+    track = _track(board_after, pv_after[:config.EXPLAIN_LINE_PLIES], mover)
+    return max(0, baseline - max(b for b, _ in track[-2:]))
 
 
 def material_phrase(points):
@@ -373,6 +399,8 @@ def classify_game(start_board, moves, positions, book_plies=0, opening_names=Non
         # ---- context tags for the coach ------------------------------------
         tags = []
         info = {"piece": PIECE_NAMES[board.piece_type_at(move.from_square)]}
+        if gap is not None:
+            info["gap"] = round(gap)             # win% between the best and second-best move
         if reason:
             tags.append(reason)
         if board.is_capture(move):
@@ -459,6 +487,10 @@ def classify_game(start_board, moves, positions, book_plies=0, opening_names=Non
             # blue: the opponent's concrete response (a capture), e.g. taking a sacrificed piece
             "reply": (next_best["uci"] if next_best and cls not in (MISTAKE, BLUNDER)
                       and after.is_capture(chess.Move.from_uci(next_best["uci"])) else None),
+            # for "Explain why": the opponent's best continuation after this move, and
+            # how much material the mover is down once it has been played out
+            "reply_line": san_line(after, pv_after[:config.EXPLAIN_LINE_PLIES]),
+            "material_drop": _material_drop(after, pv_after, mover, own_baseline),
             "tags": tags,
             "info": info,
             "phase": phase,

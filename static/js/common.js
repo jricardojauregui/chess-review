@@ -245,6 +245,7 @@ export function applySettings() {
   root.dataset.theme = settings.theme;
   root.dataset.board = settings.board;
   root.dataset.pieces = settings.pieces;
+  root.dataset.sound = settings.sound ? 'on' : 'off';
 }
 
 /** Change preferences: updates the page at once and saves in the background. */
@@ -311,6 +312,7 @@ export const ARROW_COLORS = {
   best: '#8fbf3f',      // green: a stronger move you could have played
   punish: '#eb5a4e',    // red: a threat or problem (e.g. the reply that wins material)
   reply: '#4fb0e0',     // blue: the opponent's plan or response
+  hint: '#3d7fe0',      // blue: the move a hint points at (lessons and puzzles)
 };
 
 export function drawArrows(svg, arrows, orientation) {

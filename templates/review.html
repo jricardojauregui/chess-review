@@ -70,6 +70,7 @@
             <div class="bubble-head"><span id="bubble-icon"></span><span class="title" id="bubble-title"></span><span class="eval-chip" id="bubble-eval" hidden></span></div>
             <div class="bubble-text" id="bubble-text"></div>
             <div class="bubble-line" id="bubble-line"></div>
+            <div class="bubble-why" id="bubble-why" hidden></div>
           </div>
         </div>
 
@@ -91,7 +92,9 @@
           <div class="progress-label" id="progress-label">&nbsp;</div>
         </div>
 
-        <div class="actions three" id="actions-review" hidden>
+        <div class="actions with-why" id="actions-review" hidden>
+          <button class="btn btn-icon why-btn" id="btn-why" aria-pressed="false" title="Explain why (W)" aria-label="Explain why" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17.5h6M10 20.5h4M12 3.5a6 6 0 00-3.6 10.8c.6.5 1 1.100 1.100 1.900V17h5v-.8c0-.8.4-1.400 1.100-1.900A6 6 0 0012 3.500z"/></svg></button>
           <button class="btn" id="btn-best">Show best move</button>
           <button class="btn" id="btn-retry">Retry</button>
           <button class="btn btn-primary" id="btn-next">Next</button>

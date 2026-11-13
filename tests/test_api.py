@@ -125,6 +125,11 @@ def test_full_flow_import_analyse_review(client, engine):
     assert review["moves"][4]["cls"] == "best"
     assert review["moves"][0]["clock"] == 598
     assert all(m["coach"]["text"] and m["coach"]["title"] for m in review["moves"])
+    # "Explain why": only for the classifications that need a reason
+    why = review["moves"][3]["coach"]["explain"]
+    assert "checkmate in 1" in " ".join(why["text"]) and "Qxe5#" in " ".join(why["text"])
+    assert any(line["label"] == "Better" and line["moves"].startswith("2...") for line in why["lines"])
+    assert review["moves"][0]["coach"]["explain"] is None and review["moves"][4]["coach"]["explain"] is None
     summary = review["summary"]
     assert summary["accuracy"]["w"] > summary["accuracy"]["b"]
     assert summary["counts"]["b"]["blunder"] == 1
@@ -134,6 +139,31 @@ def test_full_flow_import_analyse_review(client, engine):
     assert stats["games"] == 1 and stats["outcomes"]["win"] == 1
     puzzles = client.get("/api/puzzles/bob").get_json()["puzzles"]
     assert puzzles == []                                      # bob has no stored games
+
+
+def test_spanish_coach_and_language_setting(client):
+    """The language is a saved setting; the review's coach texts follow it."""
+    from analysis import coach, coach_es, classify
+    assert set(coach_es.TEMPLATES) == set(coach.TEMPLATES)          # same bank, both languages
+    assert set(coach_es.EXPLAIN) == set(coach.EXPLAIN["en"])
+    assert set(coach_es.TITLES) == set(classify.ALL_LABELS)
+    result = {"cls": "blunder", "color": "w", "san": "Qxd5", "move_number": 19, "is_best": False,
+              "tags": ["hangs_piece"], "info": {"piece": "queen", "hung": "queen"},
+              "best": {"san": "Qxf7+", "pv_san": ["Qxf7+", "Kxf7"]}, "second": None,
+              "reply_line": ["Qxd5", "Bb5+"], "win_before": 50, "win_after": 1, "material_drop": 9}
+    for hero in ("w", "b", None):
+        message = coach.message_for(result, hero=hero, lang="es")
+        assert message["title"] == "Qxd5 es un error grave" and "la dama" in message["text"]
+        assert "[" not in message["text"] and "{" not in message["text"]
+        why = " ".join(coach.explain(result, None, hero, "es")["text"])
+        assert "deja la dama sin suficiente defensa" in why and "[" not in why and "{" not in why
+    assert "Tus probabilidades" in " ".join(coach.explain(result, None, "w", "es")["text"])
+    assert "Your winning chances" in " ".join(coach.explain(result, None, "w", "en")["text"])
+
+    assert client.get("/api/settings").get_json()["lang"] == "en"
+    assert client.post("/api/settings", json={"lang": "es"}).get_json()["lang"] == "es"
+    assert b'<html lang="es"' in client.get("/").data
+    assert client.post("/api/settings", json={"lang": "klingon"}).get_json()["lang"] == "en"
 
 
 def test_review_of_unknown_game_is_404(client):

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Opening · Chess Review{% endblock %}
+{% block content %}
+<div id="app" data-lesson-id="{{ lesson_id }}">
+  <section id="stage-loading" class="stage-center">
+    <div id="loading-coach"></div>
+    <h2 id="loading-title">Opening the lesson<span class="dots"></span></h2>
+    <div id="loading-error" class="error-box" hidden></div>
+    <p><a href="/openings" id="loading-back" hidden>Back to openings</a></p>
+  </section>
+
+  <section id="stage-main" class="review-grid" hidden>
+    <div class="board-col lesson-board">
+      <div class="board-row">
+        <div class="board-box">
+          <div id="board"></div>
+          <svg class="arrows" id="arrows" viewBox="0 0 8 8" aria-hidden="true"></svg>
+          <div class="move-badge" id="move-badge" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side-col">
+      <div class="side-scroll">
+        <div class="lesson-head">
+          <a href="/openings" class="back-link">← Openings</a>
+          <h1 id="lesson-name"></h1>
+          <div class="lesson-tags" id="lesson-tags"></div>
+        </div>
+
+        <!-- The coach explains the move on the board -->
+        <div class="card coach-card">
+          <div class="coach-row">
+            <div class="coach-avatar" id="coach-avatar"></div>
+            <div class="bubble" id="bubble" aria-live="polite">
+              <div class="bubble-head"><span class="title" id="bubble-title"></span></div>
+              <div class="bubble-text" id="bubble-text"></div>
+            </div>
+          </div>
+          <!-- where you are in the guided lesson / practice -->
+          <div class="lesson-progress" id="lesson-progress" hidden>
+            <div class="progress"><div class="progress-fill" id="lp-fill"></div></div>
+            <span id="lp-label"></span>
+          </div>
+          <div class="actions lesson-actions">
+            <button class="btn" id="btn-exit" hidden>Exit</button>
+            <button class="btn" id="btn-hint" title="First the piece, then the move (H)" hidden>Hint</button>
+            <button class="btn" id="btn-practice">Practice from memory</button>
+            <button class="btn btn-primary" id="btn-main">Start guided lesson</button>
+          </div>
+        </div>
+
+        <div class="card lesson-lines" id="lines-card">
+          <div class="pill-row" id="line-choice" role="group" aria-label="Line"></div>
+          <div class="muted lines-locked" id="lines-locked" hidden></div>
+          <div class="moves" id="moves"></div>
+        </div>
+
+        <div class="card" id="why-card">
+          <div class="section-title" id="why-title">Why play it</div>
+          <div id="why-body"></div>
+        </div>
+
+        <div class="card" id="games-card">
+          <div class="section-title">Your games with it</div>
+          <div id="games-body"></div>
+        </div>
+
+        <div class="card" id="named-card" hidden>
+          <div class="section-title" id="named-title">Named variations</div>
+          <div class="named-list" id="named-list"></div>
+        </div>
+      </div>
+
+      <div class="card side-footer">
+        <div class="controls">
+          <button class="btn btn-icon" id="nav-first" title="Start (↑)" aria-label="Start">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="5" width="2.6" height="14" rx="1"/><path d="M20 5.6v12.8a1 1 0 01-1.550.830L9 12.830a1 1 0 010-1.660l9.450-6.400A1 1 0 0120 5.600z"/></svg></button>
+          <button class="btn btn-icon" id="nav-prev" title="Previous move (←)" aria-label="Previous move">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.500L8 12l6.500 6.500"/></svg></button>
+          <button class="btn btn-icon btn-play" id="nav-play" title="Play the line (Space)" aria-label="Play the line" aria-pressed="false">
+            <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5.600v12.800a1 1 0 001.550.830l9.450-6.400a1 1 0 000-1.660L8.550 4.770A1 1 0 007 5.600z"/></svg>
+            <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.800" y="5" width="4.2" height="14" rx="1.2"/></svg></button>
+          <button class="btn btn-icon" id="nav-next" title="Next move (→)" aria-label="Next move">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.500 5.500L16 12l-6.500 6.500"/></svg></button>
+          <button class="btn btn-icon" id="nav-last" title="End of the line (↓)" aria-label="End of the line">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="17.400" y="5" width="2.6" height="14" rx="1"/><path d="M4 5.600v12.800a1 1 0 001.550.830L15 12.830a1 1 0 000-1.660L5.550 4.770A1 1 0 004 5.600z"/></svg></button>
+          <button class="btn btn-icon" id="nav-flip" title="Flip board (F)" aria-label="Flip board">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v15M8 4L4.500 7.500M8 4l3.500 3.500M16 20V5M16 20l-3.500-3.500M16 20l3.500-3.500"/></svg></button>
+        </div>
+      </div>
+    </aside>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/opening.js') }}"></script>
+{% endblock %}

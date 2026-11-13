@@ -151,6 +151,9 @@ MISSED_MATE_MAX_N = 5
 
 # Context tags
 TACTIC_MIN_POINTS = 2               # material won in the PV to call it a tactic
+EXPLAIN_LINE_PLIES = 5               # moves of a line shown by "Explain why"
+EXPLAIN_MIN_MATERIAL = 2            # material lost in that line before the coach mentions it
+                                    # (one point is enough when the reply is a capture)
 RETRY_TOLERANCE = 2.0               # "Retry" accepts moves within this win% of best
 
 # Accuracy per move = clamp(A * exp(-B * loss) - C, 0, 100)
@@ -187,6 +190,20 @@ PHASE_QUALITY = [(90, "best"), (80, "excellent"), (70, "good"),
 TIME_PRESSURE_FRACTION = 0.10       # clock below 10% of the base time...
 TIME_PRESSURE_MIN_SECONDS = 10      # ...or below this many seconds
 STATS_DEFAULT_GAMES = 20
+
+# --------------------------------------------------------------------------
+# Training puzzles (analysis/puzzles.py)
+# --------------------------------------------------------------------------
+PUZZLES_PATH = DATA_DIR / "puzzles.tsv"   # built by scripts/build_puzzles.py
+PUZZLE_SESSION_SIZE = 12            # puzzles served per request
+PUZZLE_PROFILE_GAMES = 50           # reviewed games used to find what you get wrong
+PUZZLE_FOCUS_BASE = 2               # base weight of every focus, added to its error count
+PUZZLE_RATING_MIN = 400
+PUZZLE_RATING_MAX = 2200
+PUZZLE_START_RATING = 900           # without a game rating to go by
+PUZZLE_RATING_OFFSET = 300          # puzzle ratings run higher than rapid ratings
+PUZZLE_RATING_WINDOW = 90           # first search window around the target rating
+PUZZLE_RATING_K = 28                # how fast your puzzle rating moves (Elo K-factor)
 
 # --------------------------------------------------------------------------
 # Web server
