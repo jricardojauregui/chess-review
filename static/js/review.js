@@ -188,7 +188,7 @@ $('#reanalyze').addEventListener('click', () => runAnalysis(presetById(level).de
 
 // ================================================================ summary
 function renderPlayers() {
-  const g = R.game, acc = R.summary.accuracy, cc = g.cc_accuracy;
+  const g = R.game, acc = R.summary.accuracy, cc = g.cc_accuracy, played = R.summary.game_rating || {};
   const card = (color, side) => {
     const p = g[side];
     const you = R.hero === color ? ' <span class="muted">(you)</span>' : '';
@@ -199,6 +199,7 @@ function renderPlayers() {
       <div class="name">${escapeHtml(p.name)}${you}</div>
       <div class="muted" style="font-size:13px">${p.rating ? p.rating : '&nbsp;'}</div>
       <div class="acc-box"><div class="acc">${value}</div><div class="acc-label">Accuracy</div>${theirs}</div>
+      <div class="game-rating" title="An estimate of the rating this game was played at, from the accuracy and the player's rating"><b>${played[color] ?? '–'}</b><span>Game rating</span></div>
     </div>`;
   };
   $('#summary-players').innerHTML = card('w', 'white') + card('b', 'black');
@@ -220,12 +221,14 @@ function renderSummary() {
         <td class="n ${b ? '' : 'zero'}">${b}</td></tr>`;
     }).join('');
   $('#summary-counts').innerHTML = `<thead><tr><th>White</th><th></th><th>Black</th></tr></thead><tbody>${rows}</tbody>`;
-  const phaseNames = { opening: 'Opening', middlegame: 'Middlegame', endgame: 'Endgame' };
+  // Game phases, then the advanced stats (tactics / strategy): quality icon + estimated rating
+  const parts = [['Opening', s.phases.opening], ['Middlegame', s.phases.middlegame], ['Endgame', s.phases.endgame],
+    ['Tactics', s.skills.tactics, true], ['Strategy', s.skills.strategy]];
   const cell = p => (p
-    ? `${badgeSVG(p.quality, 20)} <span class="muted" style="font-weight:500;font-size:13px">${p.accuracy.toFixed(0)}%</span>`
+    ? `<span class="skill" title="${p.accuracy.toFixed(0)}% accuracy over ${p.moves} moves">${badgeSVG(p.quality, 20)}<b>${p.rating ?? ''}</b></span>`
     : '<span class="muted">–</span>');
-  $('#summary-phases').innerHTML = `<tbody>${Object.entries(phaseNames).map(([key, name]) =>
-    `<tr><td class="n">${cell(s.phases[key].w)}</td><td class="label">${name}</td><td class="n">${cell(s.phases[key].b)}</td></tr>`
+  $('#summary-phases').innerHTML = `<tbody>${parts.map(([name, part, divider]) =>
+    `<tr class="${divider ? 'divider' : ''}"><td class="n">${cell(part.w)}</td><td class="label">${name}</td><td class="n">${cell(part.b)}</td></tr>`
   ).join('')}</tbody>`;
   const used = presetByDepth(R.depth);
   $('#reanalyze-title').textContent = `Analyzed at ${used ? used.name : 'depth ' + R.depth} · analyze again at another level`;

@@ -52,7 +52,8 @@ export const EXACT = {
   // --------------------------------------------------------------- review
   'Opening the game': 'Abriendo la partida', 'Back to games': 'Volver a las partidas',
   'Could not open this game': 'No se pudo abrir esta partida', Evaluation: 'Evaluación',
-  'Start Review': 'Empezar la revisión', 'Game phases': 'Fases de la partida',
+  'Start Review': 'Empezar la revisión', Tactics: 'Táctica', Strategy: 'Estrategia', 'Game rating': 'Rating de la partida',
+  "An estimate of the rating this game was played at, from the accuracy and the player's rating": 'Una estimación del rating con el que se jugó esta partida, según la precisión y el rating del jugador', 'Game phases': 'Fases de la partida',
   'Analyze again at another level': 'Analizar otra vez a otro nivel', 'Analysis level': 'Nivel de análisis',
   Effort: 'Esfuerzo', 'Re-analyze': 'Volver a analizar', 'Analyze game': 'Analizar partida',
   'How much of the CPU the engine may use: more effort, faster analysis': 'Cuánta CPU puede usar el motor: más esfuerzo, análisis más rápido',
@@ -245,6 +246,7 @@ export const PATTERNS = [
   [/^A fine alternative\. The engine's first choice was (\S+)\.(.*)$/, m => `Una buena alternativa. La primera opción del motor era ${m[1]}.${versus(m[2])}`],
   [/^Playable, but (\S+) was more accurate\.(.*)$/, m => `Jugable, pero ${m[1]} era más precisa.${versus(m[2])}`],
   [/^This doesn't work as well\. (\S+) was much stronger\.(.*)$/, m => `Esto no funciona tan bien. ${m[1]} era mucho más fuerte.${versus(m[2])}`],
+  [/^(\d+)% accuracy over (\d+) moves$/, '$1% de precisión en $2 jugadas'],
   [/^(\d+) × (pawn|knight|bishop|rook|queen)$/, m => `${m[1]} × ${PIECE[m[2]].split(' ')[1]}`],
   // ---------------------------------------------------------------- stats
   [/^(\d+) W · (\d+) D · (\d+) L$/, '$1 G · $2 T · $3 P'],

@@ -133,6 +133,9 @@ def test_full_flow_import_analyse_review(client, engine):
     summary = review["summary"]
     assert summary["accuracy"]["w"] > summary["accuracy"]["b"]
     assert summary["counts"]["b"]["blunder"] == 1
+    assert summary["game_rating"] == {"w": None, "b": None}      # too short for an estimate
+    assert set(summary["skills"]) == {"tactics", "strategy"}
+    assert summary["phases"]["opening"]["w"]["rating"] is None and summary["phases"]["endgame"]["w"] is None
     assert summary["comment"]["text"]
 
     stats = client.get("/api/stats/alice").get_json()

@@ -18,10 +18,10 @@ from analysis import classify as C
 
 # Coach face per classification
 EXPRESSIONS = {
-    C.BRILLIANT: "surprised", C.GREAT: "surprised",
+    C.BRILLIANT: "amazed", C.GREAT: "proud",
     C.BEST: "happy", C.EXCELLENT: "happy", C.GOOD: "happy", C.BOOK: "happy",
     C.FORCED: "thinking", C.INACCURACY: "thinking",
-    C.MISS: "worried", C.MISTAKE: "worried", C.BLUNDER: "worried",
+    C.MISS: "worried", C.MISTAKE: "worried", C.BLUNDER: "sad",
 }
 
 TITLES = {

@@ -504,6 +504,28 @@ def classify_game(start_board, moves, positions, book_plies=0, opening_names=Non
     return results
 
 
+def game_rating(accuracy, player_rating=None):
+    """Estimated playing strength shown in one game (see GAME_RATING_* in config).
+
+    ``accuracy`` is the game accuracy (0..100) of one side, ``player_rating``
+    their actual rating when known. Returns an int rounded to GAME_RATING_STEP,
+    or None without an accuracy.
+    """
+    if accuracy is None:
+        return None
+    curve = config.GAME_RATING_CURVE
+    value = curve[0][1] if accuracy <= curve[0][0] else curve[-1][1]
+    for (acc_low, low), (acc_high, high) in zip(curve, curve[1:]):
+        if acc_low <= accuracy <= acc_high:
+            value = low + (high - low) * (accuracy - acc_low) / (acc_high - acc_low)
+            break
+    if player_rating:
+        weight = config.GAME_RATING_OWN_WEIGHT
+        value = (1 - weight) * value + weight * player_rating
+    step = config.GAME_RATING_STEP
+    return max(config.GAME_RATING_MIN, int(round(value / step) * step))
+
+
 # --------------------------------------------------------------------------
 # Game accuracy
 # --------------------------------------------------------------------------

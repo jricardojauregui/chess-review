@@ -766,3 +766,9 @@ html[data-sound="off"] #sound-toggle { color: var(--muted); }
 .lesson-grid { padding-bottom: 12px; }
 /* the expanded focus list scrolls inside its card instead of stretching the page */
 .focus-card[open] #focus-list { max-height: max(140px, calc(100vh - 670px)); overflow-y: auto; scrollbar-width: thin; margin-right: -6px; padding-right: 6px; }
+.game-rating { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin-top: 8px; }
+.game-rating b { font-family: var(--font-display); font-size: 20px; font-variant-numeric: tabular-nums; }
+.game-rating span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.skill { display: inline-flex; align-items: center; gap: 6px; }
+.skill b { font-variant-numeric: tabular-nums; }
+table.counts tr.divider td { border-top: 1px solid var(--line); }

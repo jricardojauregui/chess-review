@@ -1,21 +1,35 @@
-/* Coach "Ollie": one SVG whose parts move between poses (see coachSVG in common.js). */
+/* Coach "Ollie": one SVG whose parts move between poses (see coachSVG in common.js).
+   Three layers of movement:
+     1. poses        [data-expression]: where every part rests for a mood
+     2. always alive breathing, blinking, glancing around, a slow sway
+     3. reactions    .react (a hop, a jump, a shake of the head when the mood
+                     changes) and .talk (the beak moves while a new message appears) */
 .coach-svg { display: block; overflow: visible; }
 .coach-svg * { transform-box: fill-box; transform-origin: center; }
 
-/* springy glide between poses */
-.owl-pupil, .owl-lid-up, .owl-lid-low, .owl-brow, .owl-mouth, .owl-beak, .owl-wing, .owl-head, .owl-x, .owl-blush {
-  transition: transform .5s cubic-bezier(.34, 1.56, .64, 1), opacity .3s ease;
-}
+/* ---- gliding between poses: each part has its own weight, so they do not
+   all arrive at once (eyes first, then brows, then head and wings) */
+.owl-pupil, .owl-lid-up, .owl-lid-low { transition: transform .32s cubic-bezier(.3, 1.2, .5, 1); }
+.owl-brow, .owl-mouth, .owl-beak { transition: transform .45s cubic-bezier(.34, 1.5, .64, 1); }
+.owl-head { transition: transform .7s cubic-bezier(.3, 1.3, .5, 1); }
+.owl-wing { transition: transform .8s cubic-bezier(.3, 1.45, .5, 1); }
+.owl-x, .owl-blush { transition: transform .5s cubic-bezier(.34, 1.56, .64, 1), opacity .35s ease; }
 
-/* ---- always alive: breathing, blinking, wing settle */
+/* ---- always alive */
+.owl { transform-origin: 50% 100%; animation: owl-sway 7s ease-in-out infinite; }
 .owl-body { transform-origin: 50% 100%; animation: owl-breathe 3.4s ease-in-out infinite; }
 .owl-head { animation: owl-headbob 3.4s ease-in-out infinite; }
 .owl-blink { animation: owl-blink 5.2s infinite; }
+.owl-pupil > * { animation: owl-glance 9s ease-in-out infinite; }      /* a look to each side now and then */
+.owl-feet { animation: owl-toes 6.5s ease-in-out infinite; transform-origin: 50% 0; }
 .owl-wing-l { transform-origin: 80% 5%; }
 .owl-wing-r { transform-origin: 20% 5%; }
+@keyframes owl-sway { 25% { transform: rotate(.9deg); } 75% { transform: rotate(-.9deg); } }
 @keyframes owl-breathe { 50% { transform: scale(1.012, 1.028); } }
 @keyframes owl-headbob { 50% { transform: translateY(-1.1px); } }
 @keyframes owl-blink { 0%, 93%, 100% { transform: translateY(0); } 96% { transform: translateY(31px); } }
+@keyframes owl-glance { 0%, 58%, 72%, 86%, 100% { transform: none; } 62%, 68% { transform: translateX(3px); } 76%, 82% { transform: translateX(-3px); } }
+@keyframes owl-toes { 0%, 88%, 100% { transform: none; } 92% { transform: scaleY(.8); } 96% { transform: scaleY(1.1); } }
 
 /* ---- rest pose of the moving parts */
 .owl-lid-up { transform: translateY(-33px); }       /* parked above the eye */
@@ -31,27 +45,60 @@
 [data-expression="happy"] .owl-brow { transform: translateY(-1px); }
 [data-expression="happy"] .owl-blush { opacity: .6; }
 
+/* ---- proud (great move): a wink, a big smile and one wing raised in a cheer */
+[data-expression="proud"] .owl-lid-low { transform: translateY(18px); }
+[data-expression="proud"] .owl-eye:first-of-type .owl-lid-up { transform: translateY(-9px); }      /* the wink */
+[data-expression="proud"] .owl-pupil { transform: translateY(-2px) scale(1.1); }
+[data-expression="proud"] .owl-brow-l { transform: translateY(2px) rotate(-6deg); }
+[data-expression="proud"] .owl-brow-r { transform: translateY(-4px) rotate(-6deg); }
+[data-expression="proud"] .owl-head { transform: rotate(4deg); animation: none; }
+[data-expression="proud"] .owl-blush { opacity: .75; }
+[data-expression="proud"] .owl-wing-r { transform: rotate(-128deg); animation: owl-cheer-r .5s ease-in-out .35s 4 alternate; }
+[data-expression="proud"] .owl-wing-l { transform: rotate(10deg); }
+[data-expression="proud"] .owl-sparkle { opacity: 1; transform: scale(.8); animation: owl-twinkle 1.6s ease-in-out infinite; }
+[data-expression="proud"] .owl-sparkle-2, [data-expression="proud"] .owl-sparkle-3 { opacity: 0; }
+@keyframes owl-cheer-r { to { transform: rotate(-104deg); } }
+
+/* ---- amazed (brilliant move): huge eyes, beak wide open, both wings up and waving, stars */
+[data-expression="amazed"] .owl-pupil { transform: scale(.55); }
+[data-expression="amazed"] .owl-brow { transform: translateY(-8px); }
+[data-expression="amazed"] .owl-mouth { transform: scaleY(1.2); }
+[data-expression="amazed"] .owl-beak { transform: translateY(-2px); }
+[data-expression="amazed"] .owl-head { transform: translateY(-2px) scale(1.03); }
+[data-expression="amazed"] .owl-blush { opacity: .5; }
+[data-expression="amazed"] .owl-wing-l { transform: rotate(132deg); animation: owl-wave-l .42s ease-in-out .3s 8 alternate; }
+[data-expression="amazed"] .owl-wing-r { transform: rotate(-132deg); animation: owl-wave-r .42s ease-in-out .3s 8 alternate; }
+[data-expression="amazed"] .owl-sparkle { opacity: 1; transform: scale(1); animation: owl-twinkle 1.2s ease-in-out infinite; }
+[data-expression="amazed"] .owl-sparkle-2 { animation-delay: .35s; }
+[data-expression="amazed"] .owl-sparkle-3 { animation-delay: .7s; }
+@keyframes owl-wave-l { to { transform: rotate(102deg); } }
+@keyframes owl-wave-r { to { transform: rotate(-102deg); } }
+
 /* ---- surprised: wide eyes, brows up, beak open, wings out, sparkle */
 [data-expression="surprised"] .owl-pupil { transform: scale(.62); }
 [data-expression="surprised"] .owl-brow { transform: translateY(-6px); }
-[data-expression="surprised"] .owl-mouth { transform: scaleY(1); }
+[data-expression="surprised"] .owl-mouth { transform: scaleY(.9); }
 [data-expression="surprised"] .owl-beak { transform: translateY(-1.5px); }
-[data-expression="surprised"] .owl-wing-l { transform: rotate(28deg); }
-[data-expression="surprised"] .owl-wing-r { transform: rotate(-28deg); }
+[data-expression="surprised"] .owl-wing-l { transform: rotate(42deg); }
+[data-expression="surprised"] .owl-wing-r { transform: rotate(-42deg); }
 [data-expression="surprised"] .owl-sparkle { opacity: 1; transform: scale(1); animation: owl-twinkle 1.6s ease-in-out infinite; }
+[data-expression="surprised"] .owl-sparkle-2, [data-expression="surprised"] .owl-sparkle-3 { opacity: 0; }
 @keyframes owl-twinkle { 50% { transform: scale(.7) rotate(25deg); opacity: .6; } }
 
-/* ---- thinking: eyes up and aside, one brow raised, head tilted, thought dots */
+/* ---- thinking: eyes up and aside, one brow raised, head tilted, a wing to the chin, thought dots */
 [data-expression="thinking"] .owl-head { transform: rotate(-5deg); animation: none; }
 [data-expression="thinking"] .owl-pupil { transform: translate(4.5px, -5px); }
+[data-expression="thinking"] .owl-pupil > * { animation: none; }
 [data-expression="thinking"] .owl-lid-up { transform: translateY(-25px); }
 [data-expression="thinking"] .owl-brow-l { transform: translateY(1px) rotate(4deg); }
 [data-expression="thinking"] .owl-brow-r { transform: translateY(-5px) rotate(-8deg); }
+[data-expression="thinking"] .owl-wing-r { transform: rotate(-24deg); animation: owl-ponder 2.6s ease-in-out infinite; }
 [data-expression="thinking"] .owl-think { opacity: 1; transform: scale(1); }
 [data-expression="thinking"] .owl-think circle { animation: owl-float 1.8s ease-in-out infinite; }
 [data-expression="thinking"] .owl-think circle:nth-child(2) { animation-delay: .25s; }
 [data-expression="thinking"] .owl-think circle:nth-child(3) { animation-delay: .5s; }
 @keyframes owl-float { 50% { transform: translateY(-3px); } }
+@keyframes owl-ponder { 50% { transform: rotate(-32deg); } }
 
 /* ---- worried: eyes down, brows pinched, wings drooping, a drop of sweat */
 [data-expression="worried"] .owl-pupil { transform: translateY(4px) scale(.88); }
@@ -63,20 +110,46 @@
 [data-expression="worried"] .owl-sweat { opacity: 1; transform: scale(1); animation: owl-drip 1.9s ease-in infinite; }
 @keyframes owl-drip { 0% { transform: translateY(-4px) scale(.6); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(12px) scale(1); opacity: 0; } }
 
+/* ---- sad (blunder): head down, eyes almost shut, wings hanging, sweat */
+[data-expression="sad"] .owl-head { transform: translateY(5px) rotate(3deg); animation: none; }
+[data-expression="sad"] .owl-pupil { transform: translateY(6px) scale(.85); }
+[data-expression="sad"] .owl-pupil > * { animation: none; }
+[data-expression="sad"] .owl-lid-up { transform: translateY(-15px); }
+[data-expression="sad"] .owl-brow-l { transform: translateY(4px) rotate(-22deg); }
+[data-expression="sad"] .owl-brow-r { transform: translateY(4px) rotate(22deg); }
+[data-expression="sad"] .owl-beak { transform: translateY(1.5px); }
+[data-expression="sad"] .owl-wing-l { transform: rotate(-14deg) translateY(6px); }
+[data-expression="sad"] .owl-wing-r { transform: rotate(14deg) translateY(6px); }
+[data-expression="sad"] .owl-body { animation: owl-sigh 4.2s ease-in-out infinite; }
+[data-expression="sad"] .owl-sweat { opacity: 1; transform: scale(1); animation: owl-drip 2.4s ease-in infinite; }
+@keyframes owl-sigh { 40% { transform: scale(1.02, 1.04); } 70% { transform: scale(.995, .975); } }
+
 /* ---- one-off reaction each time the mood (or the move) changes */
 .coach-svg.react .owl { animation: owl-nod .5s ease; }
 .coach-svg.react[data-expression="happy"] .owl { animation: owl-hop .6s cubic-bezier(.3, .7, .4, 1); }
+.coach-svg.react[data-expression="proud"] .owl { animation: owl-hop .6s cubic-bezier(.3, .7, .4, 1); }
 .coach-svg.react[data-expression="surprised"] .owl { animation: owl-jump .65s cubic-bezier(.3, .7, .4, 1); }
+.coach-svg.react[data-expression="amazed"] .owl { animation: owl-jump .65s cubic-bezier(.3, .7, .4, 1) 2; }
 .coach-svg.react[data-expression="worried"] .owl { animation: owl-shiver .55s linear; }
+.coach-svg.react[data-expression="sad"] .owl { animation: owl-no 1.1s ease-in-out; }
 .coach-svg.react[data-expression="happy"] .owl-wing-l { animation: owl-flap-l .6s ease; }
 .coach-svg.react[data-expression="happy"] .owl-wing-r { animation: owl-flap-r .6s ease; }
-.owl { transform-origin: 50% 100%; }
 @keyframes owl-nod { 40% { transform: translateY(2px) scale(1.01, .985); } }
 @keyframes owl-hop { 0% { transform: scale(1.04, .94); } 35% { transform: translateY(-9px) scale(.97, 1.05); } 70% { transform: translateY(0) scale(1.03, .96); } }
 @keyframes owl-jump { 0% { transform: scale(1.06, .9); } 30% { transform: translateY(-14px) scale(.95, 1.08); } 65% { transform: translateY(0) scale(1.05, .93); } 85% { transform: translateY(-3px); } }
 @keyframes owl-shiver { 15% { transform: translateX(-2.5px) rotate(-1.5deg); } 30% { transform: translateX(2.5px) rotate(1.5deg); } 45% { transform: translateX(-2px) rotate(-1deg); } 60% { transform: translateX(2px) rotate(1deg); } 80% { transform: translateX(-1px); } }
+@keyframes owl-no { 15% { transform: rotate(-4deg); } 35% { transform: rotate(4deg); } 55% { transform: rotate(-3deg); } 75% { transform: rotate(2deg); } }
 @keyframes owl-flap-l { 30% { transform: rotate(38deg); } 60% { transform: rotate(-6deg); } }
 @keyframes owl-flap-r { 30% { transform: rotate(-38deg); } 60% { transform: rotate(6deg); } }
+
+/* ---- talking: when a new message appears the beak opens two or three times,
+   softly, and the head nods once. Short on purpose: a remark, not a speech. */
+.coach-svg.talk .owl-beak { animation: owl-chatter .42s ease-in-out 2; }
+.coach-svg.talk .owl-mouth { animation: owl-speak .42s ease-in-out 2; }
+.coach-svg.talk .owl-head { animation: owl-talknod .84s ease-in-out 1; }
+@keyframes owl-chatter { 50% { transform: translateY(-1.4px); } }
+@keyframes owl-speak { 50% { transform: scaleY(.55); } }
+@keyframes owl-talknod { 50% { transform: translateY(1px) rotate(1deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   .coach-svg *, .coach-svg { animation: none !important; }

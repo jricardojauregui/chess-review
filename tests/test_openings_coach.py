@@ -51,7 +51,7 @@ def test_every_classification_has_enough_variants_and_formats():
 def test_titles_and_expressions():
     assert coach.message_for(_result(C.BRILLIANT))["title"] == "Nf5 is brilliant"
     assert coach.message_for(_result(C.BLUNDER))["title"] == "Nf5 is a blunder"
-    assert coach.message_for(_result(C.BLUNDER))["expression"] == "worried"
+    assert coach.message_for(_result(C.BLUNDER))["expression"] == "sad"
     assert coach.message_for(_result(C.BEST))["expression"] == "happy"
     assert coach.message_for(_result(C.INACCURACY))["expression"] == "thinking"
 

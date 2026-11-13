@@ -79,27 +79,61 @@ def _phase_quality(accuracy):
     return config.PHASE_QUALITY[-1][1]
 
 
-def _summary(results, accuracy, result, hero, lang="en"):
+def _areas(result):
+    """Areas of play (config.SKILL_AREAS) a classified move counts toward."""
+    if result["phase"] == "opening":
+        return set()
+    if config.SKILL_TACTICAL_TAGS & set(result["tags"]):
+        return {"tactics"}
+    return {"strategy"}
+
+
+def _blend(accuracies):
+    """Average of the plain and the harmonic mean: bad moves weigh more, as in the game accuracy."""
+    mean = sum(accuracies) / len(accuracies)
+    harmonic = len(accuracies) / sum(1 / max(a, 1.0) for a in accuracies)
+    return (mean + harmonic) / 2
+
+
+def _summary(results, accuracy, result, hero, lang="en", ratings=None):
+    ratings = ratings or {}
     counts = {c: {label: 0 for label in classify.ALL_LABELS} for c in "wb"}
     for r in results:
         counts[r["color"]][r["cls"]] += 1
+    moves = {c: [r for r in results if r["color"] == c] for c in "wb"}
+    overall = {c: _blend([r["accuracy"] for r in moves[c]]) if moves[c] else None for c in "wb"}
 
-    phases = {}
-    for phase in ("opening", "middlegame", "endgame"):
-        phases[phase] = {}
-        for color in "wb":
-            accs = [r["accuracy"] for r in results
-                    if r["phase"] == phase and r["color"] == color]
-            if accs:
-                mean = sum(accs) / len(accs)
-                phases[phase][color] = {"moves": len(accs), "accuracy": round(mean, 1),
-                                        "quality": _phase_quality(mean)}
-            else:
-                phases[phase][color] = None
+    def part(color, chosen, minimum=1):
+        """Accuracy, quality icon and estimated rating of some of a player's moves.
+
+        The rating is the game rating moved by how much better or worse these
+        moves were than the player's game as a whole, so the parts stay
+        consistent with the overall number.
+        """
+        accs = [r["accuracy"] for r in chosen]
+        if len(accs) < minimum:
+            return None
+        mean = sum(accs) / len(accs)
+        rating = None
+        if accuracy[color] is not None and len(moves[color]) >= config.GAME_RATING_MIN_MOVES:
+            shifted = accuracy[color] + _blend(accs) - overall[color]
+            rating = classify.game_rating(max(0.0, min(100.0, shifted)), ratings.get(color))
+        return {"moves": len(accs), "accuracy": round(mean, 1), "quality": _phase_quality(mean),
+                "rating": rating}
+
+    phases = {phase: {c: part(c, [r for r in moves[c] if r["phase"] == phase]) for c in "wb"}
+              for phase in ("opening", "middlegame", "endgame")}
+    # Advanced stats: the same numbers for the tactical and the quiet moves
+    skills = {area: {c: part(c, [r for r in moves[c] if area in _areas(r)], config.SKILL_MIN_MOVES)
+                     for c in "wb"} for area in config.SKILL_AREAS}
+    game_rating = {c: (classify.game_rating(accuracy[c], ratings.get(c))
+                       if len(moves[c]) >= config.GAME_RATING_MIN_MOVES else None) for c in "wb"}
     return {
         "accuracy": accuracy,
+        "game_rating": game_rating,          # estimated strength shown in this game
         "counts": counts,
         "phases": phases,
+        "skills": skills,
         "comment": coach.summary_comment(results, counts, accuracy, result, hero, lang),
     }
 
@@ -137,7 +171,9 @@ def build_review(game_row, positions, depth, hero=None, lang="en"):
         "hero": hero,
         "start": {"fen": board.fen(), "win_white": round(start_win, 2), "eval": start_eval},
         "moves": results,
-        "summary": _summary(results, accuracy, meta.get("result"), hero, lang),
+        "summary": _summary(results, accuracy, meta.get("result"), hero, lang,
+                            {"w": (meta.get("white") or {}).get("rating"),
+                             "b": (meta.get("black") or {}).get("rating")}),
         "coach_lines": coach.interactive(lang),
         "labels": classify.ALL_LABELS,
     }

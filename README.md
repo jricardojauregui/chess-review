@@ -78,6 +78,11 @@ o en `.env`; no se usa el 5000 porque en macOS lo ocupa AirPlay.)
    a la partida, el motor evalúa tu jugada en vivo, la clasifica, mueve la barra
    y muestra sus **3 mejores líneas** (clic en una para jugarla). *Undo move*
    retrocede y *Back to game* (o `Esc`) vuelve a la partida.
+   El resumen muestra además el **Game rating** de cada jugador (una estimación
+   del nivel con que se jugó esa partida, a partir de la precisión y del rating
+   real; chess.com no publica su fórmula, así que es una aproximación ajustable
+   en `config.py`) y, en **Game phases**, ese rating separado por apertura,
+   medio juego y final, más táctica y estrategia.
    En las jugadas Brilliant, Great, Miss, Inaccuracy, Mistake y Blunder aparece
    **Explain why** (tecla `W`): el coach explica en dos o tres frases el motivo
    concreto (qué respuesta castiga la jugada, qué material se pierde, qué mate

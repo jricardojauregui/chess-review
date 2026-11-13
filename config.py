@@ -164,6 +164,30 @@ ACC_A, ACC_B, ACC_C = 103.1668, 0.04354, 3.1669
 #               in (single blunders hurt a lot). Off by ~5 points on average.
 #   "mean":     plain average of the move accuracies. Off by ~18 points (too high).
 ACCURACY_MODE = "weighted"
+
+# Game rating: "what rating did this game look like?", as in chess.com's Game
+# Review. chess.com does not publish its formula; what it does say is that the
+# estimate comes from the accuracy and also depends on the players' ratings.
+# Ours: accuracy -> rating on the curve below (typical accuracy per rating
+# level, interpolated), pulled toward the player's own rating, rounded to 50.
+# Calibrated on a game chess.com rated 1200 / 900 (players around 500, our
+# accuracies 88.4 / 78.0): it leans on the player's rating more than one would guess.
+GAME_RATING_CURVE = [(30, 100), (50, 300), (60, 500), (65, 700), (70, 900), (75, 1150),
+                     (80, 1450), (85, 1650), (90, 1960), (95, 2450), (100, 3000)]
+GAME_RATING_OWN_WEIGHT = 0.50       # share of the estimate that is the player's own rating
+GAME_RATING_STEP = 50               # chess.com shows it in steps of 50
+GAME_RATING_MIN = 100
+GAME_RATING_MIN_MOVES = 5           # moves a side needs for an estimate to mean anything
+
+# Advanced stats (shown with the game phases): the game rating of the moves
+# after the opening, split in two.
+#   tactics   forcing moves (captures, checks, sacrifices) and moves where a
+#             tactic was found, missed or allowed
+#   strategy  the quiet moves
+SKILL_AREAS = ["tactics", "strategy"]
+SKILL_TACTICAL_TAGS = {"capture", "check", "checkmate", "sacrifice", "tactic", "missed_tactic",
+                       "hangs_piece", "mate_found", "missed_mate", "allows_mate"}
+SKILL_MIN_MOVES = 3                 # moves of an area needed to rate it
 # The starting position always shows 0.00 (like chess.com) instead of the
 # engine's small first-move edge.
 START_EVAL_ZERO = True

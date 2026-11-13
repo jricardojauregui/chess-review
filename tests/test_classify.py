@@ -18,7 +18,7 @@ def test_brilliant_legal_queen_sacrifice(classify_line):
     move = classify_line(fen, ["Nxe5"], depth=16)[0]
     assert move["cls"] == C.BRILLIANT
     assert "sacrifice" in move["tags"]
-    assert coach.message_for(move)["expression"] == "surprised"
+    assert coach.message_for(move)["expression"] == "amazed"
 
 
 def test_blunder_that_hangs_the_queen(classify_line):
@@ -269,3 +269,12 @@ def test_bad_moves_carry_the_punishing_reply(classify_line):
     assert move["cls"] == C.BLUNDER and move["punish"] == "c6e5"
     best = classify_line(fen, [move["best"]["san"]])[0]      # the engine's own choice
     assert best["cls"] not in (C.MISTAKE, C.BLUNDER) and best["punish"] is None
+
+
+def test_game_rating_follows_accuracy_and_the_players_rating():
+    rate = C.game_rating
+    assert rate(None) is None
+    assert rate(60) < rate(75) < rate(90) < rate(99)               # better play, higher estimate
+    assert all(rate(a, r) % config.GAME_RATING_STEP == 0 for a in (41.3, 77.7, 93.1) for r in (None, 507, 1830))
+    assert rate(80, 500) < rate(80) < rate(80, 2400)               # pulled toward the real rating
+    assert rate(5, 100) == config.GAME_RATING_MIN and rate(100) == config.GAME_RATING_CURVE[-1][1]

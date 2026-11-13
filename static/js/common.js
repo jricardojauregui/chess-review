@@ -43,7 +43,16 @@ export function badgeSVG(cls, size = 22) {
 // wings) between poses, so changing mood animates instead of swapping images.
 let coachCount = 0;
 
-/** The coach as an SVG string. expression: happy | surprised | thinking | worried */
+/**
+ * The coach as an SVG string. Expressions:
+ *   happy      smiling eyes, rosy cheeks
+ *   proud      a wink and one wing raised in a cheer            (great moves)
+ *   amazed     huge eyes, beak open, both wings up and waving   (brilliant moves)
+ *   surprised  wide eyes, wings out                             (a puzzle solved, a line learned)
+ *   thinking   eyes up and aside, head tilted, thought bubbles
+ *   worried    brows pinched, wings drooping, a drop of sweat   (mistakes, misses)
+ *   sad        head down, eyes shut, slow shake of the head     (blunders)
+ */
 export function coachSVG(expression = 'happy') {
   const id = `owl${++coachCount}`;
   return `<svg class="coach-svg" viewBox="0 0 120 124" data-expression="${expression}" role="img" aria-label="Coach Ollie">
@@ -81,6 +90,8 @@ export function coachSVG(expression = 'happy') {
         <g class="owl-blush"><ellipse cx="29" cy="64" rx="5" ry="3" fill="#ff8fa3"/><ellipse cx="91" cy="64" rx="5" ry="3" fill="#ff8fa3"/></g>
       </g>
       <path class="owl-x owl-sparkle" d="M102 20l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#ffd866"/>
+      <path class="owl-x owl-sparkle owl-sparkle-2" d="M16 14l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#ffd866"/>
+      <path class="owl-x owl-sparkle owl-sparkle-3" d="M60 -6l1.600 4 4 1.600-4 1.600-1.600 4-1.600-4-4-1.600 4-1.600z" fill="#fff3b8"/>
       <g class="owl-x owl-think"><circle cx="101" cy="30" r="2.5"/><circle cx="107" cy="21" r="3.5"/><circle cx="114" cy="10" r="4.5"/></g>
       <path class="owl-x owl-sweat" d="M100 32c3 5 5 7 5 10a5 5 0 01-10 0c0-3 2-5 5-10z" fill="#7cc7ff"/>
     </g>
@@ -92,17 +103,25 @@ export function coachSVG(expression = 'happy') {
  * there it is NOT redrawn: its parts glide to the new pose and it reacts
  * (hop, jump, tilt, shiver) to the change.
  */
+const TALK_MS = 900;                       // how long the beak moves after a new message
+const talkTimers = new WeakMap();
+
 export function showCoach(container, expression = 'happy') {
   if (!container) return;
   let svg = container.querySelector('svg.coach-svg');
   if (!svg) {
     container.innerHTML = coachSVG(expression);
-    return;
+    svg = container.querySelector('svg.coach-svg');
+  } else {
+    svg.dataset.expression = expression;
+    svg.classList.remove('react', 'talk');
+    void svg.getBoundingClientRect();      // restart the reaction animation
+    svg.classList.add('react');
   }
-  svg.dataset.expression = expression;
-  svg.classList.remove('react');
-  void svg.getBoundingClientRect();        // restart the reaction animation
-  svg.classList.add('react');
+  // every call comes with a new message: the owl "says" it
+  svg.classList.add('talk');
+  clearTimeout(talkTimers.get(svg));
+  talkTimers.set(svg, setTimeout(() => svg.classList.remove('talk'), TALK_MS));
 }
 
 // -------------------------------------------------------------------- API
