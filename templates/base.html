@@ -1,6 +1,6 @@
 <!doctype html>
-<html lang="en" data-theme="{{ settings.theme }}" data-board="{{ settings.board }}"
-      data-pieces="{{ settings.pieces }}">
+<html lang="{{ settings.lang }}" data-theme="{{ settings.theme }}" data-board="{{ settings.board }}"
+      data-pieces="{{ settings.pieces }}" data-sound="{{ 'on' if settings.sound else 'off' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pieces.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/coach.css') }}">
+  {% if settings.lang == 'es' %}
+  <!-- Spanish: the page is translated in place by i18n.js; stay hidden until it has run -->
+  <style>html:not(.i18n-ready) body { visibility: hidden; }</style>
+  <script>setTimeout(function () { document.documentElement.classList.add('i18n-ready'); }, 2000);</script>
+  {% endif %}
 </head>
 <body>
   {% set account = settings.account %}
@@ -24,12 +29,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 12h17M12 3.5v17"/><path d="M3.5 3.5H12V12H3.5zM12 12h8.5v8.5H12z" fill="currentColor" opacity=".28" stroke="none"/></svg>
         <span class="label">Games</span>
       </a>
+      <a href="/openings" class="{{ 'active' if request.path.startswith('/openings') }}" title="Openings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.500c2.700-1.200 5.300-1.200 8 .400 2.700-1.600 5.300-1.600 8-.400v13c-2.700-1.200-5.300-1.200-8 .400-2.700-1.600-5.300-1.600-8-.400zM12 5.900v13"/></svg>
+        <span class="label">Openings</span>
+      </a>
       <a href="/stats" class="{{ 'active' if request.path == '/stats' }}" title="Stats">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V11M10 20V4M16 20v-7M21 20H3"/></svg>
         <span class="label">Stats</span>
       </a>
       <a href="/puzzles" class="{{ 'active' if request.path == '/puzzles' }}" title="Puzzles">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4.200a2.300 2.300 0 113.600 0H16a1 1 0 011 1v3.200a2.300 2.300 0 110 3.600V20a1 1 0 01-1 1H5a1 1 0 01-1-1v-3.400a2.300 2.300 0 100-3.200z"/></svg>
         <span class="label">Puzzles</span>
       </a>
       <a href="/settings" class="{{ 'active' if request.path == '/settings' }}" title="Settings">
@@ -48,6 +57,11 @@
           <span class="label">Link account</span>
         {% endif %}
       </a>
+      <button class="icon-btn" id="sound-toggle" title="Move sounds on / off" aria-label="Move sounds on / off">
+        <svg class="sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.500v5h3.500L12 18.500v-13L7.500 9.500zM15.500 9a4 4 0 010 6M18 6.500a7.500 7.500 0 010 11"/></svg>
+        <svg class="sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.500v5h3.500L12 18.500v-13L7.500 9.500zM16 9.500l5 5M21 9.500l-5 5"/></svg>
+      </button>
+      <button class="icon-btn lang-btn" id="lang-toggle" title="{{ 'Switch to English' if settings.lang == 'es' else 'Switch to Spanish' }}" aria-label="{{ 'Switch to English' if settings.lang == 'es' else 'Switch to Spanish' }}">{{ settings.lang|upper }}</button>
       <button class="icon-btn" id="theme-toggle" title="Switch between light and dark" aria-label="Switch between light and dark">
         <svg class="only-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.500M2.500 12H5M19 12h2.500M5.300 5.300l1.800 1.800M16.900 16.900l1.800 1.800M5.300 18.700l1.800-1.800M16.900 7.100l1.800-1.800"/></svg>
         <svg class="only-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20 14.500A8 8 0 019.500 4a8 8 0 1010.500 10.500z"/></svg>

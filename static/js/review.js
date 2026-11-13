@@ -376,7 +376,29 @@ function setEvalBar(winWhite, ev) {
   num.classList.toggle('black-side', !whiteBetter);
 }
 
-function setCoach({ expression, cls, title, evalText, text, line }) {
+/** "Explain why": the reason behind the classification, opened on demand. */
+function setWhy(explain, open = false) {
+  const button = $('#btn-why'), box = $('#bubble-why');
+  const has = Boolean(explain && explain.text.length);
+  const shown = has && open;
+  button.disabled = !has;
+  button.classList.toggle('on', shown);
+  button.setAttribute('aria-pressed', String(shown));
+  // the explanation takes the place of the coach's comment instead of growing the bubble
+  box.hidden = !shown;
+  $('#bubble-text').hidden = shown;
+  $('#bubble-line').hidden = shown;
+  box.innerHTML = has ? explain.text.map(t => `<p>${escapeHtml(t)}</p>`).join('')
+    + explain.lines.map(l => `<p class="why-line">${escapeHtml(l.label)}: <b>${escapeHtml(l.moves)}</b></p>`).join('') : '';
+}
+function toggleWhy() {
+  const m = currentMove();
+  if ($('#btn-why').disabled || !m || !m.coach || mode !== 'normal' || variation) return;
+  setWhy(m.coach.explain, $('#bubble-why').hidden);
+}
+
+function setCoach({ expression, cls, title, evalText, text, line, explain }) {
+  setWhy(explain);
   showCoach($('#coach-avatar'), expression);     // the owl moves into the new pose
   $('#bubble-icon').innerHTML = cls ? badgeSVG(cls, 24) : '';
   $('#bubble-title').textContent = title || '';
@@ -437,6 +459,7 @@ function render() {
       setCoach({
         expression: m.coach.expression, cls: m.cls, title: m.coach.title, evalText: m.eval.text,
         text: m.coach.text, line: m.is_best || m.cls === 'book' ? '' : bestLineHTML(m),
+        explain: m.coach.explain,
       });
     } else {
       setCoach({ expression: 'happy', title: "Let's review!", text: R.coach_lines.intro[0] });
@@ -722,6 +745,7 @@ $('#btn-undo').addEventListener('click', undoExplore);
 $('#btn-exit').addEventListener('click', () => { stopPlay(); render(); });
 
 // =============================================================== controls
+$('#btn-why').addEventListener('click', toggleWhy);
 $('#btn-best').addEventListener('click', showBest);
 $('#btn-retry').addEventListener('click', () => (mode === 'retry' ? render() : startRetry()));
 $('#btn-next').addEventListener('click', () => goTo(ply + 1));
@@ -761,6 +785,7 @@ document.addEventListener('keydown', e => {
     ArrowRight: stepForward, ArrowLeft: () => (variation ? undoExplore() : goTo(ply - 1)),
     ArrowUp: () => goTo(0), ArrowDown: () => goTo(R.moves.length),
     Home: () => goTo(0), End: () => goTo(R.moves.length), f: flip, F: flip,
+    w: toggleWhy, W: toggleWhy,
     Escape: () => { stopPlay(); if (variation) render(); },
   };
   if (actions[e.key]) { e.preventDefault(); actions[e.key](); }

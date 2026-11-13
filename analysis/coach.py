@@ -11,6 +11,9 @@ Placeholders: {move} {best} {piece} {material} {n} {opening}
 """
 import hashlib
 
+import config
+from analysis import coach_es
+
 from analysis import classify as C
 
 # Coach face per classification
@@ -362,7 +365,7 @@ def _pick_context(result):
     return None
 
 
-def message_for(result, hero=None, seed=0, used=None):
+def message_for(result, hero=None, seed=0, used=None, lang="en"):
     """Build ``{"title", "text", "expression"}`` for one classified move.
 
     ``used`` is a per-game counter so consecutive moves with the same
@@ -372,7 +375,8 @@ def message_for(result, hero=None, seed=0, used=None):
     cls, info = result["cls"], result["info"]
     context = _pick_context(result)
     key = (cls, context)
-    variants = TEMPLATES[key]
+    bank = coach_es.TEMPLATES if lang == "es" else TEMPLATES
+    variants = bank.get(key) or bank[(cls, None)]
     count = used.get(key, 0)
     used[key] = count + 1
     template = variants[(seed + count) % len(variants)]
@@ -392,6 +396,13 @@ def message_for(result, hero=None, seed=0, used=None):
     values = {"move": result["san"], "best": best_san, "piece": piece,
               "captured": info.get("captured", "piece"), "material": material,
               "n": n, "opening": info.get("opening", "")}
+    if lang == "es":
+        who = coach_es.voice(result["color"], hero)
+        values.update({"pieza": coach_es.piece(piece), "capturada": coach_es.piece(values["captured"]),
+                       "material": coach_es.material(material), **who})
+        return {"title": coach_es.TITLES[cls].format(move=result["san"]),
+                "text": coach_es.render(template, values, who["hero"]),
+                "expression": EXPRESSIONS[cls]}
     values.update(_voice(result["color"], hero))
     return {
         "title": TITLES[cls].format(move=result["san"]),
@@ -400,12 +411,173 @@ def message_for(result, hero=None, seed=0, used=None):
     }
 
 
-def annotate(results, game_id="", hero=None):
-    """Attach a ``coach`` message to every classified move (in place)."""
+# --------------------------------------------------------------------------
+# "Explain why": the concrete reason behind a classification
+# --------------------------------------------------------------------------
+EXPLAINED = (C.BRILLIANT, C.GREAT, C.MISS, C.INACCURACY, C.MISTAKE, C.BLUNDER)
+
+
+def _numbered(move_number, white_first, sans):
+    """SAN moves with move numbers: "14...Qxd4 15.Nxd4 Rxd4"."""
+    out, number, white = [], move_number, white_first
+    for index, san in enumerate(sans):
+        if white:
+            out.append(f"{number}.{san}")
+        else:
+            out.append(f"{number}...{san}" if index == 0 else san)
+            number += 1
+        white = not white
+    return " ".join(out)
+
+
+# Phrases of "Explain why". "[yours|theirs]" picks a verb form by who moved
+# (see coach_es.render); coach_es.EXPLAIN has the same keys in Spanish.
+EXPLAIN = {"en": {
+    "offers": "{move} puts the {piece} where it can be taken, on purpose.",
+    "gives_up": "{move} gives up material on purpose.",
+    "worth_it": "Even after the best reply, {reply}, [you keep|{subj} keeps] winning chances of "
+                "{after}%: what [you get|{subj} gets] in return is worth more than the material.",
+    "refutes": "{prev} was a mistake, and {move} is the move that punishes it.",
+    "only_move": "It was the only move that works: the next best, {second}, would have cost "
+                 "about {gap}% of the winning chances.",
+    "miss_intro": "{prev} was a mistake by {opp}, and this was the moment to punish it.",
+    "allows_mate": "{move} allows a forced checkmate in {n}, starting with {reply}.",
+    "hangs": "{move} leaves the {piece} without enough protection: {reply} wins it.",
+    "missed_mate": "There was a forced checkmate in {n}, starting with {best}.",
+    "wins_material": "After {move}, the reply {reply} wins {material}.",
+    "easier": "{move} is playable, but it makes things easier for {opp} after {reply}.",
+    "back_in": "{move} loses no material right away, but after {reply} the advantage is gone.",
+    "takes_over": "{move} loses no material right away, but after {reply} the initiative belongs to {opp}.",
+    "best_tactic": "{best} was the move: it wins {material}.",
+    "best_punish": "{best} was the punishment; {move} let the chance go.",
+    "best_advantage": "{best} kept {poss} advantage.",
+    "best_balance": "{best} kept the game balanced.",
+    "best_defence": "{best} was the most stubborn defence.",
+    "chances": "{Poss} winning chances went from {before}% to {after}%.",
+    "label_follows": "What follows", "label_after": "After {move}", "label_better": "Better",
+}, "es": coach_es.EXPLAIN}
+
+
+def explain(result, prev=None, hero=None, lang="en"):
+    """Why a move got its classification, in two or three short sentences.
+
+    Uses what the engine saw: the opponent's best continuation after the move
+    (``reply_line``), the best line that was available, and the winning chances
+    before and after. Returns ``{"text": [sentences], "lines": [{label, moves}]}``
+    or None for classifications that need no explanation (Best, Book...).
+    """
+    cls = result["cls"]
+    if cls not in EXPLAINED:
+        return None
+    tags, info = result["tags"], result["info"]
+    white = result["color"] == "w"
+    move, number = result["san"], result["move_number"]
+    best, second = result.get("best"), result.get("second")
+    reply_line = result.get("reply_line") or []
+    reply = reply_line[0] if reply_line else None
+    before, after = round(result["win_before"]), round(result["win_after"])
+    drop = result.get("material_drop", 0)
+
+    # ---- words for the chosen language
+    spanish = lang == "es"
+    phrases = EXPLAIN["es" if spanish else "en"]
+    piece_word = coach_es.piece if spanish else (lambda name: name)
+    material_word = coach_es.material if spanish else (lambda phrase: phrase)
+    if spanish:
+        values = coach_es.voice(result["color"], hero)
+        is_hero = values["hero"]
+    else:
+        values = _voice(result["color"], hero)
+        values["Poss"] = values["poss"][0].upper() + values["poss"][1:]
+        is_hero = values["subj"] == "you"
+    values.update({"move": move, "reply": reply, "prev": prev["san"] if prev else None,
+                   "best": best["san"] if best else None, "second": second["san"] if second else None,
+                   "before": before, "after": after, "gap": info.get("gap"),
+                   "piece": info.get("piece", "piece"), "pieza": piece_word(info.get("piece", "piece")),
+                   "material": material_word(C.material_phrase(drop)), "n": ""})
+    text, lines = [], []
+
+    def say(key, **extra):
+        text.append(coach_es.render(phrases[key], {**values, **extra}, is_hero))
+
+    def line(key, moves):
+        lines.append({"label": phrases[key].format(move=move), "moves": moves})
+
+    reply_moves = _numbered(number if white else number + 1, not white, reply_line)
+    best_moves = _numbered(number, white, best["pv_san"][:config.EXPLAIN_LINE_PLIES]) if best else ""
+
+    if cls == C.BRILLIANT:
+        say("gives_up" if "capture" in tags else "offers")
+        if reply:
+            say("worth_it")
+            line("label_follows", reply_moves)
+        return {"text": text, "lines": lines}
+
+    if cls == C.GREAT:
+        if "refutes" in tags and prev:
+            say("refutes")
+        if second and info.get("gap"):
+            say("only_move")
+        if reply:
+            line("label_follows", reply_moves)
+        return {"text": text, "lines": lines}
+
+    # ---- inaccuracy / mistake / blunder / miss: what went wrong...
+    wins_material = bool(reply) and (drop >= config.EXPLAIN_MIN_MATERIAL or (drop >= 1 and "x" in reply))
+    show_reply = True
+    if cls == C.MISS and prev and "missed_mate" not in tags:
+        say("miss_intro")
+    if "allows_mate" in tags:
+        say("allows_mate", n=info["allows_mate_n"])
+    elif "hangs_piece" in tags:
+        say("hangs", piece=info["hung"], pieza=piece_word(info["hung"]))
+    elif "missed_mate" in tags and best:
+        say("missed_mate", n=info["missed_mate_n"])
+        show_reply = False
+    elif cls == C.MISS:
+        show_reply = False                                # a miss is about the chance, not the reply
+    elif wins_material:
+        say("wins_material")
+    elif reply and cls == C.INACCURACY:
+        say("easier")
+    elif reply:
+        say("back_in" if after >= 45 else "takes_over")
+    if reply and show_reply:
+        line("label_after", reply_moves)
+
+    # ...and what was better
+    if best and not result["is_best"]:
+        if "missed_mate" in tags:
+            pass                                             # already said above
+        elif "missed_tactic" in tags:
+            say("best_tactic", material=material_word(info.get("best_material", "material")))
+        elif cls == C.MISS:
+            say("best_punish")
+        elif before >= 65:
+            say("best_advantage")
+        elif before >= 40:
+            say("best_balance")
+        else:
+            say("best_defence")
+        line("label_better", best_moves)
+    say("chances")
+    return {"text": text, "lines": lines}
+
+
+def interactive(lang="en"):
+    """Lines used client-side by the Retry / Show best buttons, in the given language."""
+    return coach_es.INTERACTIVE if lang == "es" else INTERACTIVE
+
+
+def annotate(results, game_id="", hero=None, lang="en"):
+    """Attach a ``coach`` message (and its ``explain``) to every classified move (in place)."""
     seed = int(hashlib.sha1(game_id.encode()).hexdigest(), 16) % 997
     used = {}
+    prev = None
     for result in results:
-        result["coach"] = message_for(result, hero=hero, seed=seed, used=used)
+        result["coach"] = message_for(result, hero=hero, seed=seed, used=used, lang=lang)
+        result["coach"]["explain"] = explain(result, prev, hero, lang)
+        prev = result
     return results
 
 
@@ -420,12 +592,14 @@ def _count(n, noun):
     return f"{word} {noun}{'' if n == 1 else 's'}"
 
 
-def summary_comment(results, counts, accuracy, result, hero=None):
+def summary_comment(results, counts, accuracy, result, hero=None, lang="en"):
     """One or two sentences describing the whole game.
 
     ``counts`` is {"w": {label: n}, "b": {...}}, ``result`` the PGN result.
     Returns ``{"text", "expression"}``.
     """
+    if lang == "es":
+        return coach_es.summary_comment(results, counts, accuracy, result, hero)
     errors = sum(counts[c].get(k, 0) for c in "wb" for k in (C.MISTAKE, C.BLUNDER, C.MISS))
     accs = [a for a in accuracy.values() if a is not None]
     if errors >= 5:

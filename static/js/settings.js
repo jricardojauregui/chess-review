@@ -5,6 +5,7 @@ import {
   presets, saveSettings, settings,
 } from './common.js';
 import { linkAccount } from './shell.js';
+import { attachHyperspace } from './hyperspace.js';
 
 const BOARDS = {
   Classic: [['classic', 'Classic'], ['forest', 'Forest'], ['ocean', 'Ocean'], ['slate', 'Slate'], ['walnut', 'Walnut'],
@@ -54,6 +55,9 @@ function paintAccount() {
 }
 
 // ----------------------------------------------------------------- engine
+// The Max cards (level and effort) get the hyperspace effect on hover
+attachHyperspace(document.querySelector('.settings'));
+
 function paintPresets() {
   $('#preset-choice').innerHTML = presets.map(p => `
     <button type="button" class="preset ${p.id === 'max' ? 'max' : ''} ${p.id === settings.engine ? 'on' : ''}"

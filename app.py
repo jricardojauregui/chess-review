@@ -5,7 +5,7 @@ Run with:  python app.py   (then open http://127.0.0.1:5050)
 from flask import Flask, Response, jsonify, render_template, request, stream_with_context
 
 import config
-from analysis import chesscom, explore, jobs, store
+from analysis import chesscom, explore, jobs, lessons, puzzles, store
 from analysis import stats as stats_mod
 from analysis.engine import EngineNotFound
 from analysis.review import PgnError, build_preview, build_review, meta_from_pgn, parse_pgn
@@ -52,6 +52,11 @@ def _piece_sets():
     return sets
 
 
+def _lang():
+    """Language of the interface and the coach: "en" or "es"."""
+    return "es" if store.get_settings()["lang"] == "es" else "en"
+
+
 def _account():
     account = store.get_settings()["account"]
     return account["username"] if account else None
@@ -81,6 +86,16 @@ def page_settings():
 @app.route("/puzzles")
 def page_puzzles():
     return render_template("puzzles.html")
+
+
+@app.route("/openings")
+def page_openings():
+    return render_template("openings.html")
+
+
+@app.route("/openings/<lesson_id>")
+def page_opening(lesson_id):
+    return render_template("opening.html", lesson_id=lesson_id)
 
 
 # ------------------------------------------------------------------- API
@@ -146,13 +161,13 @@ def api_review(game_id):
     if positions is None:
         # Not analysed yet: send the bare game so the board can be shown right away.
         try:
-            preview = build_preview(row, request.args.get("hero"))
+            preview = build_preview(row, request.args.get("hero"), _lang())
         except PgnError as exc:
             return _error(str(exc), 400)
         preview["pending_depth"] = depth
         return jsonify(preview), 202
     try:
-        return jsonify(build_review(row, positions, depth, request.args.get("hero")))
+        return jsonify(build_review(row, positions, depth, request.args.get("hero"), _lang()))
     except PgnError as exc:
         return _error(str(exc), 400)
 
@@ -224,7 +239,9 @@ def api_settings():
     if request.method == "POST":
         body = request.get_json(silent=True) or {}
         allowed = {k: v for k, v in body.items()
-                   if k in ("theme", "board", "pieces", "sound", "engine", "effort")}
+                   if k in ("theme", "board", "pieces", "sound", "engine", "effort", "lang")}
+        if "lang" in allowed:
+            allowed["lang"] = "es" if allowed["lang"] == "es" else "en"
         if "engine" in allowed:
             allowed["engine"] = config.preset(allowed["engine"])["id"]
         if "effort" in allowed:
@@ -266,6 +283,50 @@ def api_stats(username):
     username = chesscom.validate_username(username)
     limit = request.args.get("n", type=int) or config.STATS_DEFAULT_GAMES
     return jsonify(stats_mod.build_stats(username, limit))
+
+
+@app.route("/api/openings")
+def api_openings():
+    """Lesson cards with the linked account's numbers and how well each one fits."""
+    return jsonify(lessons.overview(_account(), _lang()))
+
+
+@app.route("/api/openings/lesson/<lesson_id>")
+def api_opening(lesson_id):
+    """One lesson (hand-written, or db-<n> for any named opening) ready for the board."""
+    detail = lessons.lesson_detail(lesson_id, _account(), _lang())
+    if detail is None:
+        return _error("That opening does not exist.", 404)
+    return jsonify(detail)
+
+
+@app.route("/api/openings/search")
+def api_openings_search():
+    """Search the whole database of named openings by name, ECO code or moves."""
+    return jsonify({"results": lessons.search(request.args.get("q", ""))})
+
+
+@app.route("/api/puzzles/train", methods=["POST"])
+def api_puzzles_train():
+    """A training session: puzzles from the bank, mixed by what the user gets wrong.
+
+    Body: {rating, n, seen: [ids]}. Without a rating it starts from the user's level.
+    """
+    body = request.get_json(silent=True) or {}
+    username = _account()
+    reviews = stats_mod.recent_reviews(username, config.PUZZLE_PROFILE_GAMES) if username else []
+    profile = puzzles.weaknesses(reviews)
+    try:
+        rating = int(body.get("rating"))
+    except (TypeError, ValueError):
+        rating = puzzles.start_rating(stats_mod.hero_rating(reviews))
+    seen = [s for s in (body.get("seen") or []) if isinstance(s, str)][:2000]
+    n = body.get("n") if isinstance(body.get("n"), int) else None
+    return jsonify({"username": username, "rating": rating, "profile": profile,
+                    "bank_size": len(puzzles.bank()["all"]),
+                    "k": config.PUZZLE_RATING_K,
+                    "rating_range": [config.PUZZLE_RATING_MIN, config.PUZZLE_RATING_MAX],
+                    "puzzles": puzzles.session(profile, rating, n, seen)})
 
 
 @app.route("/api/puzzles/<username>")

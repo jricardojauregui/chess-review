@@ -3,9 +3,14 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>Puzzles from my mistakes</h1>
+    <h1>Puzzles</h1>
     <div class="sub" id="puzzle-who"></div>
   </div>
+  <span class="spacer"></span>
+  <span class="segmented" id="puzzle-source" role="group" aria-label="Which puzzles">
+    <button type="button" data-source="train" class="on">Training</button>
+    <button type="button" data-source="games">From my games</button>
+  </span>
 </div>
 <div id="puzzle-error" class="error-box" hidden></div>
 
@@ -13,9 +18,13 @@
 
 <section id="puzzle-stage" class="puzzle-grid" hidden>
   <div class="puzzle-board">
-    <div class="board-box"><div id="board"></div><div class="move-badge" id="move-badge" hidden></div></div>
+    <div class="board-box">
+      <div id="board"></div>
+      <svg class="arrows" id="arrows" viewBox="0 0 8 8" aria-hidden="true"></svg>
+      <div class="move-badge" id="move-badge" hidden></div>
+    </div>
   </div>
-  <aside class="side-col">
+  <aside class="side-col puzzle-side">
     <div class="card coach-card">
       <div class="coach-row">
         <div class="coach-avatar" id="coach-avatar"></div>
@@ -25,14 +34,31 @@
           <div class="bubble-line" id="bubble-line"></div>
         </div>
       </div>
-      <div class="coach-actions">
-        <button class="btn" id="btn-prev">Previous</button>
+      <!-- one dot per move you have to find -->
+      <div class="puzzle-steps" id="puzzle-steps" aria-label="Moves to find"></div>
+      <div class="actions equal">
+        <button class="btn" id="btn-hint" title="First the piece, then the move (H)">Hint</button>
         <button class="btn" id="btn-solution">Show solution</button>
-        <button class="btn btn-primary" id="btn-next">Next</button>
+        <button class="btn btn-primary" id="btn-next" title="Next puzzle (N)">Skip</button>
       </div>
       <div class="puzzle-info" id="puzzle-info"></div>
-      <div class="puzzle-progress" id="puzzle-progress"></div>
+      <div class="puzzle-progress" id="puzzle-progress" aria-label="This session"></div>
     </div>
+
+    <div class="card" id="rating-card" hidden>
+      <div class="puzzle-rating">
+        <div><div class="pr-value" id="pr-value">–</div><div class="pr-label">Your rating</div></div>
+        <div><div class="pr-value" id="pr-streak">0</div><div class="pr-label">Streak</div></div>
+        <div><div class="pr-value" id="pr-solved">0</div><div class="pr-label">Solved</div></div>
+        <div><div class="pr-value" id="pr-rate">–</div><div class="pr-label">Success</div></div>
+      </div>
+    </div>
+
+    <details class="card focus-card" id="focus-card" hidden>
+      <summary><span class="section-title">What I'm training you on</span><span class="muted" id="focus-top"></span></summary>
+      <div class="muted focus-note" id="focus-note"></div>
+      <div id="focus-list"></div>
+    </details>
   </aside>
 </section>
 {% endblock %}

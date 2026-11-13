@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Openings · Chess Review{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Openings</h1>
+    <div class="sub">Learn an opening move by move, with the idea behind every move.</div>
+  </div>
+  <span class="spacer"></span>
+  <input type="text" id="opening-search" class="opening-search" placeholder="Search all openings: name, ECO or moves"
+         autocomplete="off" spellcheck="false" aria-label="Search all openings">
+</div>
+<div id="openings-error" class="error-box" hidden></div>
+
+<section class="card opening-coach">
+  <div class="coach-row">
+    <div class="coach-avatar" id="coach-avatar"></div>
+    <div class="bubble pop"><div class="bubble-text" id="coach-text">Looking at your games<span class="dots"></span></div></div>
+  </div>
+</section>
+
+<div id="browse">
+  <div class="opening-filters">
+    <span class="segmented" id="filters" role="group" aria-label="Which openings">
+      <button type="button" data-filter="for-you" class="on">For you</button>
+      <button type="button" data-filter="popular">Most popular</button>
+      <button type="button" data-filter="white">White</button>
+      <button type="button" data-filter="vs_e4">Black vs 1.e4</button>
+      <button type="button" data-filter="vs_d4">Black vs 1.d4</button>
+      <button type="button" data-filter="all">All lessons</button>
+    </span>
+    <span class="muted" id="filter-note"></span>
+  </div>
+  <div class="lesson-grid" id="lesson-grid"></div>
+</div>
+
+<section class="card" id="search-box" hidden>
+  <div class="section-title" id="search-title">Search results</div>
+  <div id="search-results"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/openings.js') }}"></script>
+{% endblock %}

@@ -8,7 +8,7 @@ from analysis.review import cached_review
 _ERRORS = (C.MISTAKE, C.BLUNDER, C.MISS)
 
 
-def _reviews(username, limit):
+def recent_reviews(username, limit):
     """Reviews (deepest cached analysis) of the user's latest analysed games."""
     reviews = []
     for row in store.games_for_user(username, limit, analysed_only=True):
@@ -17,6 +17,16 @@ def _reviews(username, limit):
         if review and review["hero"] in ("w", "b"):
             reviews.append(review)
     return reviews
+
+
+def hero_rating(reviews):
+    """The user's rating in the most recent reviewed game that has one."""
+    for review in reviews:
+        side = "white" if review["hero"] == "w" else "black"
+        rating = (review["game"].get(side) or {}).get("rating")
+        if rating:
+            return rating
+    return None
 
 
 def _base_seconds(time_control):
@@ -40,7 +50,7 @@ def _outcome(result, hero):
 def build_stats(username, limit=None):
     """Aggregate numbers for the stats page."""
     limit = limit or config.STATS_DEFAULT_GAMES
-    reviews = _reviews(username, limit)
+    reviews = recent_reviews(username, limit)
     totals = {label: 0 for label in C.ALL_LABELS}
     outcomes = {"win": 0, "draw": 0, "loss": 0}
     openings, games = {}, []
@@ -137,7 +147,7 @@ def build_stats(username, limit=None):
 def build_puzzles(username, limit=None):
     """One puzzle per Blunder / Miss the user played: find the best move."""
     puzzles = []
-    for review in _reviews(username, limit or config.STATS_DEFAULT_GAMES):
+    for review in recent_reviews(username, limit or config.STATS_DEFAULT_GAMES):
         hero, meta = review["hero"], review["game"]
         opponent = meta["black" if hero == "w" else "white"]["name"]
         for move in review["moves"]:
